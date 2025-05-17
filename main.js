@@ -405,7 +405,9 @@ async function showRestaurantsList() {
   container.className = 'container';
   container.innerHTML = `
     <h1>Рестораны</h1>
-    <div class="restaurants-grid" id="restaurantsList"></div>
+    <div class="restaurants-grid" id="restaurantsList">
+      <div class="loading">Загрузка ресторанов...</div>
+    </div>
   `;
   document.body.innerHTML = '';
   document.body.appendChild(container);
@@ -421,6 +423,7 @@ async function showRestaurantsList() {
       return;
     }
 
+    restaurantsList.innerHTML = ''; // Очищаем индикатор загрузки
     restaurantsSnap.forEach((doc) => {
       const restaurant = doc.data();
       const restaurantCard = document.createElement('div');
@@ -433,6 +436,13 @@ async function showRestaurantsList() {
     });
   } catch (error) {
     console.error('Ошибка загрузки ресторанов:', error);
-    document.body.innerHTML = '<h2>Ошибка загрузки списка ресторанов</h2>';
+    const restaurantsList = document.getElementById('restaurantsList');
+    restaurantsList.innerHTML = `
+      <div class="error-message">
+        <h2>Ошибка загрузки ресторанов</h2>
+        <p>Пожалуйста, проверьте подключение к интернету и попробуйте снова</p>
+        <button onclick="window.location.reload()">Обновить страницу</button>
+      </div>
+    `;
   }
 }
