@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Панель управления рестораном</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Форма входа -->
+    <form id="loginForm" class="auth-form">
+      <h1>Вход в панель управления</h1>
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Пароль:</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Войти</button>
+    </form>
+
+    <!-- Панель управления -->
+    <div id="adminPanel" class="dashboard" style="display: none;">
+      <!-- Шапка -->
+      <div class="dashboard-header">
+        <div class="restaurant-info">
+          <h2 id="restaurantName"></h2>
+          <div id="subscriptionInfo"></div>
+        </div>
+        <button id="logoutBtn" class="btn btn-secondary">Выйти</button>
+      </div>
+
+      <!-- Навигация -->
+      <div class="dashboard-nav">
+        <button class="nav-btn active" data-target="ordersSection">Заказы</button>
+        <button class="nav-btn" data-target="menuSection">Меню</button>
+        <button class="nav-btn" data-target="settingsSection">Настройки</button>
+      </div>
+
+      <!-- Основной контент -->
+      <div class="dashboard-main">
+        <!-- Секция заказов -->
+        <div id="ordersSection" class="dashboard-section active">
+          <h2>Заказы</h2>
+          <div class="filters">
+            <input type="date" id="dateFilter">
+            <select id="statusFilter">
+              <option value="">Все статусы</option>
+              <option value="new">Новые</option>
+              <option value="in_progress">В работе</option>
+              <option value="completed">Завершенные</option>
+            </select>
+            <input type="text" id="searchFilter" placeholder="Поиск...">
+          </div>
+          <div id="ordersList" class="orders-grid"></div>
+        </div>
+
+        <!-- Секция меню -->
+        <div id="menuSection" class="dashboard-section">
+          <h2>Управление меню</h2>
+          <div id="menuContainer"></div>
+        </div>
+
+        <!-- Секция настроек -->
+        <div id="settingsSection" class="dashboard-section">
+          <h2>Настройки ресторана</h2>
+          <form id="settingsForm">
+            <div class="form-group">
+              <label for="restaurantName">Название ресторана:</label>
+              <input type="text" id="restaurantName" name="restaurantName" required>
+            </div>
+            <div class="form-group">
+              <label for="logo">Логотип:</label>
+              <input type="file" id="logo" name="logo" accept="image/*">
+            </div>
+            <div class="form-group">
+              <label>
+                <input type="checkbox" name="delivery">
+                Включить доставку
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary">Сохранить настройки</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальные окна -->
+  <div id="dishModal" class="modal">
+    <div class="modal-content">
+      <h3>Добавить блюдо</h3>
+      <form id="dishForm">
+        <div class="form-group">
+          <label for="name">Название:</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+          <label for="price">Цена:</label>
+          <input type="number" id="price" name="price" required min="0">
+        </div>
+        <div class="form-group">
+          <label for="description">Описание:</label>
+          <textarea id="description" name="description"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="image">Изображение:</label>
+          <input type="file" id="image" name="image" accept="image/*">
+          <img id="dishImagePreview" src="" alt="Текущее изображение" style="display:none;max-width:100px;margin-top:10px;" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary modal-close">Отмена</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="categoryModal" class="modal">
+    <div class="modal-content">
+      <h3>Добавить категорию</h3>
+      <form id="categoryForm">
+        <div class="form-group">
+          <label for="categoryName">Название категории:</label>
+          <input type="text" id="categoryName" name="name" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary modal-close">Отмена</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

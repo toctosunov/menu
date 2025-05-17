@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="pageTitle"></title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="restaurant-header">
+    <div class="container">
+      <div class="restaurant-info">
+        <div class="restaurant-logo">
+          <img id="restaurantLogo" src="" alt="Логотип ресторана">
+        </div>
+        <div class="restaurant-details">
+          <h1 id="restaurantName"></h1>
+          <p id="restaurantDescription" class="restaurant-description"></p>
+          <div class="restaurant-meta">
+            <span id="restaurantAddress" class="meta-item">
+              <i class="icon-location"></i>
+              <span></span>
+            </span>
+            <span id="restaurantPhone" class="meta-item">
+              <i class="icon-phone"></i>
+              <span></span>
+            </span>
+            <span id="restaurantSchedule" class="meta-item">
+              <i class="icon-time"></i>
+              <span></span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="menu-section">
+      <h2>Меню</h2>
+      <div id="categories" class="categories-list"></div>
+      <div id="dishes" class="dishes-list"></div>
+    </section>
+    <section id="cartSection" class="modal hidden"></section>
+    <section id="orderSuccess" class="modal hidden">
+      <div class="success-box">
+        <h2>Спасибо за заказ!</h2>
+        <p>Ваш заказ принят. Ожидайте, скоро блюда будут доставлены к вашему столику.</p>
+        <button onclick="closeSuccess()">Закрыть</button>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>

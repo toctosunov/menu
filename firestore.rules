@@ -1,0 +1,63 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Функции для проверки ролей
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function isAdmin() {
+      return getUserRole() == 'admin';
+    }
+    
+    function isChef() {
+      return getUserRole() == 'chef';
+    }
+    
+    function isRestaurantOwner(restaurantId) {
+      let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return userData.restaurantId == restaurantId;
+    }
+
+    // Правила для коллекции users
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow delete: if request.auth != null && isAdmin();
+    }
+
+    // Правила для коллекции restaurants
+    match /restaurants/{restaurantId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (isAdmin() || isRestaurantOwner(restaurantId));
+      allow delete: if request.auth != null && isAdmin();
+      
+      // Правила для подколлекций ресторана
+      match /menu/{document=**} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && (isAdmin() || isRestaurantOwner(restaurantId));
+      }
+      
+      match /orders/{document=**} {
+        allow read: if request.auth != null && (isAdmin() || isRestaurantOwner(restaurantId) || isChef());
+        allow write: if request.auth != null && (isAdmin() || isRestaurantOwner(restaurantId) || isChef());
+      }
+      
+      match /chefs/{document=**} {
+        allow read: if request.auth != null && (isAdmin() || isRestaurantOwner(restaurantId));
+        allow write: if request.auth != null && (isAdmin() || isRestaurantOwner(restaurantId));
+      }
+    }
+
+    // Правила для коллекции orders
+    match /orders/{orderId} {
+      allow read: if request.auth != null && (isAdmin() || isChef());
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (isAdmin() || isChef());
+      allow delete: if request.auth != null && isAdmin();
+    }
+  }
+} 
