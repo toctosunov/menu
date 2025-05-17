@@ -3,6 +3,7 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  deleteUser
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 import {
   getFirestore,
@@ -12,7 +13,16 @@ import {
   getDocs,
   addDoc,
   serverTimestamp,
+  deleteDoc,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import {
+  getStorage,
+  ref,
+  listAll,
+  deleteObject
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
 import { firebaseConfig } from "./firebaseConfig.js";
 
 const app = initializeApp(firebaseConfig);
@@ -233,7 +243,7 @@ async function initFullMenuWithCart(id) {
       const box = document.createElement('div');
       box.className = 'cart-box';
       box.innerHTML = `
-        <button class="cart-close" onclick="document.getElementById('cartSection').classList.add('hidden')">×</button>
+        <button class="cart-close" id="cartCloseBtn">×</button>
         <div class="cart-title">Корзина</div>
         <ul class="cart-list"></ul>
         <div class="cart-total"></div>
@@ -244,6 +254,7 @@ async function initFullMenuWithCart(id) {
         </form>
       `;
       modal.appendChild(box);
+      box.querySelector('#cartCloseBtn').onclick = closeCart;
       const list = box.querySelector('.cart-list');
       cart.forEach((item, idx) => {
         const li = document.createElement('li');
@@ -401,14 +412,168 @@ async function createRestaurantWithAdmin(restaurantData) {
       createdAt: serverTimestamp()
     });
 
-    // Можно добавить дополнительные действия, если нужно
+    // Создаем документ пользователя с ролью admin
+    await addDoc(collection(db, 'users'), {
+      uid: userCredential.user.uid,
+      email: restaurantData.email,
+      role: 'admin',
+      restaurantId: restaurantRef.id,
+      createdAt: serverTimestamp()
+    });
+
+    // Показываем успешное сообщение с ссылками
+    const baseUrl = window.location.origin + window.location.pathname;
+    const successMessage = `
+      <div class="success-message">
+        <h2>Ресторан успешно создан!</h2>
+        <div class="links-container">
+          <div class="link-group">
+            <h3>Ссылки для клиентов:</h3>
+            <p><strong>Меню ресторана:</strong> <a href="${baseUrl}#${restaurantRef.id}" target="_blank">${baseUrl}#${restaurantRef.id}</a></p>
+          </div>
+          <div class="link-group">
+            <h3>Ссылки для персонала:</h3>
+            <p><strong>Панель администратора:</strong> <a href="${baseUrl.replace('index.html', 'admin.html')}#${restaurantRef.id}/" target="_blank">${baseUrl.replace('index.html', 'admin.html')}#${restaurantRef.id}/</a></p>
+            <p><strong>Панель повара:</strong> <a href="${baseUrl.replace('index.html', 'chef.html')}#${restaurantRef.id}" target="_blank">${baseUrl.replace('index.html', 'chef.html')}#${restaurantRef.id}</a></p>
+          </div>
+          <div class="credentials">
+            <h3>Данные для входа:</h3>
+            <p><strong>Email:</strong> ${restaurantData.email}</p>
+            <p><strong>Пароль:</strong> ${restaurantData.password}</p>
+          </div>
+        </div>
+        <button onclick="window.location.reload()" class="btn btn-primary">Вернуться к списку ресторанов</button>
+      </div>
+    `;
+
+    document.body.innerHTML = successMessage;
     return restaurantRef.id;
   } catch (error) {
     throw new Error('Ошибка при создании ресторана: ' + error.message);
   }
 }
 
-// Функция для отображения списка ресторанов
+// Функция для проверки роли пользователя
+async function checkUserRole() {
+  try {
+    const user = auth.currentUser;
+    if (!user) return null;
+    
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (!userDoc.exists()) return null;
+    
+    return userDoc.data().role;
+  } catch (error) {
+    console.error('Ошибка при проверке роли:', error);
+    return null;
+  }
+}
+
+// Функция для проверки является ли пользователь супер-админом
+async function isSuperAdmin() {
+  const role = await checkUserRole();
+  return role === 'superadmin';
+}
+
+// Функция для создания супер-админа
+async function createSuperAdmin(email, password) {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    
+    await addDoc(collection(db, 'users'), {
+      uid: userCredential.user.uid,
+      email: email,
+      role: 'superadmin',
+      createdAt: serverTimestamp()
+    });
+    
+    return userCredential.user;
+  } catch (error) {
+    throw new Error('Ошибка при создании супер-админа: ' + error.message);
+  }
+}
+
+// Функция для удаления ресторана
+async function deleteRestaurant(restaurantId) {
+  try {
+    if (!await isSuperAdmin()) {
+      throw new Error('Недостаточно прав для удаления ресторана');
+    }
+
+    // Получаем данные ресторана
+    const restaurantDoc = await getDoc(doc(db, 'restaurants', restaurantId));
+    if (!restaurantDoc.exists()) {
+      throw new Error('Ресторан не найден');
+    }
+    const restaurantData = restaurantDoc.data();
+
+    // 1. Удаляем все изображения из Storage
+    const storage = getStorage();
+    const restaurantImagesRef = ref(storage, `restaurants/${restaurantId}`);
+    try {
+      const imagesList = await listAll(restaurantImagesRef);
+      const deletePromises = imagesList.items.map(item => deleteObject(item));
+      await Promise.all(deletePromises);
+    } catch (error) {
+      console.error('Ошибка при удалении изображений:', error);
+    }
+
+    // 2. Удаляем все подколлекции ресторана
+    // Категории и блюда
+    const categories = await getDocs(collection(db, 'restaurants', restaurantId, 'categories'));
+    for (const category of categories.docs) {
+      const dishes = await getDocs(collection(db, 'restaurants', restaurantId, 'categories', category.id, 'dishes'));
+      for (const dish of dishes.docs) {
+        // Удаляем изображения блюд
+        if (dish.data().image) {
+          try {
+            const dishImageRef = ref(storage, dish.data().image);
+            await deleteObject(dishImageRef);
+          } catch (error) {
+            console.error('Ошибка при удалении изображения блюда:', error);
+          }
+        }
+        await deleteDoc(doc(db, 'restaurants', restaurantId, 'categories', category.id, 'dishes', dish.id));
+      }
+      await deleteDoc(doc(db, 'restaurants', restaurantId, 'categories', category.id));
+    }
+
+    // Заказы
+    const orders = await getDocs(collection(db, 'restaurants', restaurantId, 'orders'));
+    for (const order of orders.docs) {
+      await deleteDoc(doc(db, 'restaurants', restaurantId, 'orders', order.id));
+    }
+
+    // 3. Находим и удаляем всех пользователей, связанных с рестораном
+    const usersQuery = query(collection(db, 'users'), where('restaurantId', '==', restaurantId));
+    const users = await getDocs(usersQuery);
+    
+    for (const user of users.docs) {
+      const userData = user.data();
+      // Удаляем пользователя из Authentication
+      try {
+        const auth = getAuth();
+        const userToDelete = auth.currentUser;
+        if (userToDelete && userToDelete.uid === userData.uid) {
+          await deleteUser(userToDelete);
+        }
+      } catch (error) {
+        console.error('Ошибка при удалении пользователя из Authentication:', error);
+      }
+      // Удаляем документ пользователя
+      await deleteDoc(doc(db, 'users', user.id));
+    }
+
+    // 4. Удаляем сам ресторан
+    await deleteDoc(doc(db, 'restaurants', restaurantId));
+
+    return true;
+  } catch (error) {
+    throw new Error('Ошибка при удалении ресторана: ' + error.message);
+  }
+}
+
+// Обновляем функцию showRestaurantsList для отображения кнопок управления
 async function showRestaurantsList() {
   const container = document.createElement('div');
   container.className = 'container';
@@ -422,6 +587,7 @@ async function showRestaurantsList() {
   document.body.appendChild(container);
 
   try {
+    const isAdmin = await isSuperAdmin();
     const restaurantsRef = collection(db, 'restaurants');
     const restaurantsSnap = await getDocs(restaurantsRef);
     
@@ -439,7 +605,12 @@ async function showRestaurantsList() {
       restaurantCard.className = 'restaurant-card';
       restaurantCard.innerHTML = `
         <h3>${restaurant.name}</h3>
-        <a href="#${doc.id}" class="btn btn-primary" onclick="event.preventDefault(); window.location.hash = '${doc.id}';">Перейти в меню</a>
+        <div class="restaurant-actions">
+          <a href="#${doc.id}" class="btn btn-primary" onclick="event.preventDefault(); window.location.hash = '${doc.id}';">Перейти в меню</a>
+          ${isAdmin ? `
+            <button onclick="deleteRestaurant('${doc.id}')" class="btn btn-danger">Удалить</button>
+          ` : ''}
+        </div>
       `;
       restaurantsList.appendChild(restaurantCard);
     });
@@ -455,3 +626,16 @@ async function showRestaurantsList() {
     `;
   }
 }
+
+// Добавляем обработчик для удаления ресторана
+window.deleteRestaurant = async function(restaurantId) {
+  if (!confirm('Вы уверены, что хотите удалить этот ресторан?')) return;
+  
+  try {
+    await deleteRestaurant(restaurantId);
+    alert('Ресторан успешно удален');
+    window.location.reload();
+  } catch (error) {
+    alert(error.message);
+  }
+};
