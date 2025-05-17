@@ -19,18 +19,27 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const rawHash = window.location.hash; // "#aura" или "#aura/admin"
-const [restaurantId, subPage] = rawHash.slice(1).split("/");
+// Функция инициализации страницы
+function initPage() {
+  const rawHash = window.location.hash; // "#aura" или "#aura/admin"
+  const [restaurantId, subPage] = rawHash.slice(1).split("/");
 
-if (!restaurantId) {
-  // Показываем список всех ресторанов
-  showRestaurantsList();
-} else if (subPage === "admin") {
-  // Логика админ-панели ресторана
-  initAdminPanel(restaurantId);
-} else {
-  initFullMenuWithCart(restaurantId);
+  if (!restaurantId) {
+    // Показываем список всех ресторанов
+    showRestaurantsList();
+  } else if (subPage === "admin") {
+    // Логика админ-панели ресторана
+    initAdminPanel(restaurantId);
+  } else {
+    initFullMenuWithCart(restaurantId);
+  }
 }
+
+// Обработчик изменения хэша
+window.addEventListener('hashchange', initPage);
+
+// Инициализация при загрузке страницы
+initPage();
 
 async function initFullMenuWithCart(id) {
   try {
@@ -430,7 +439,7 @@ async function showRestaurantsList() {
       restaurantCard.className = 'restaurant-card';
       restaurantCard.innerHTML = `
         <h3>${restaurant.name}</h3>
-        <a href="#${doc.id}" class="btn btn-primary">Перейти в меню</a>
+        <a href="#${doc.id}" class="btn btn-primary" onclick="event.preventDefault(); window.location.hash = '${doc.id}';">Перейти в меню</a>
       `;
       restaurantsList.appendChild(restaurantCard);
     });
