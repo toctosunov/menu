@@ -401,28 +401,27 @@ input, select, textarea {
   scrollbar-color: #26bba4 #f5f5f5;
 }
 .category-btn {
-  min-width: 140px;
-  max-width: 220px;
-  width: auto;
-  text-align: center;
-  white-space: nowrap;
-  background: linear-gradient(90deg, #ff7043 0%, #ffa726 100%);
+  display: inline-block;
+  padding: 0.7em 2em;
+  font-size: 1.1em;
+  border-radius: 18px;
+  background: linear-gradient(90deg, #ff9966, #ff5e62);
   color: #fff;
   border: none;
-  border-radius: 14px;
-  font-size: 1.08em;
-  font-weight: 600;
+  margin: 0 0.5em 0.5em 0;
   cursor: pointer;
-  transition: background 0.18s, box-shadow 0.18s, color 0.18s, border 0.18s;
-  box-shadow: 0 2px 8px #ffb74d22;
-  outline: none;
-  user-select: none;
-  padding: 12px 28px;
+  font-weight: 600;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  text-align: center;
 }
-.category-btn.active, .category-btn:focus {
-  background: linear-gradient(90deg, #ffa726 0%, #ff7043 100%);
+.category-btn.active {
+  background: linear-gradient(90deg, #ff5e62, #ff9966);
   color: #fff;
-  box-shadow: 0 4px 18px #ffb74d44;
 }
 .category-btn:hover:not(.active) {
   background: linear-gradient(90deg, #ffa726 0%, #ff7043 100%);
@@ -655,15 +654,43 @@ input, select, textarea {
   font-size: 1.4em;
 }
 
-.restaurant-card .btn {
-  display: inline-block;
-  text-decoration: none;
-  margin-top: 12px;
+.restaurant-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.restaurant-actions .btn {
+  flex: 1;
+  max-width: 200px;
+}
+
+.btn-danger {
+  background: #f44336;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 28px;
+  font-size: 1.08em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-danger:hover {
+  background: #d32f2f;
 }
 
 @media (max-width: 768px) {
-  .restaurants-grid {
-    grid-template-columns: 1fr;
+  .restaurant-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .restaurant-actions .btn {
+    max-width: none;
+    width: 100%;
   }
 }
 
@@ -1161,4 +1188,88 @@ input, select, textarea {
 
 .error-message button:hover {
   background-color: #1976d2;
+}
+
+/* Стили для сообщения об успешном создании ресторана */
+.success-message {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 32px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+}
+
+.success-message h2 {
+  color: #4CAF50;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.links-container {
+  display: grid;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.link-group {
+  background: #f5f5f5;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.link-group h3 {
+  color: #ff7043;
+  margin-bottom: 16px;
+  font-size: 1.2em;
+}
+
+.link-group p {
+  margin-bottom: 12px;
+}
+
+.link-group a {
+  color: #2196F3;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.link-group a:hover {
+  text-decoration: underline;
+}
+
+.credentials {
+  background: #fff3e0;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.credentials h3 {
+  color: #ff7043;
+  margin-bottom: 16px;
+  font-size: 1.2em;
+}
+
+.credentials p {
+  margin-bottom: 12px;
+}
+
+.success-message button {
+  width: 100%;
+  margin-top: 24px;
+}
+
+@media (max-width: 768px) {
+  .success-message {
+    margin: 20px;
+    padding: 20px;
+  }
+  
+  .links-container {
+    gap: 20px;
+  }
+  
+  .link-group, .credentials {
+    padding: 16px;
+  }
 }
