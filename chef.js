@@ -56,33 +56,34 @@ onAuthStateChanged(auth, async (user) => {
           id: restaurantDoc.id
         };
 
-        if (userData.restaurantId && userData.chefId) {
-          const chefRef = doc(db, `restaurants/${userData.restaurantId}/chefs`, userData.chefId);
-          const chefDoc = await getDoc(chefRef);
+        if (!userData.chefId) {
+          console.error("❌ Отсутствует chefId в userData:", userData);
+          alert("Ошибка: ваш аккаунт повара не настроен. Обратитесь к администратору.");
+          await signOut(auth);
+          return;
+        }
 
-          if (chefDoc.exists()) {
-            const chefData = chefDoc.data();
-            if (chefData.active) {
-              currentChef = {
-                ...chefData,
-                id: chefDoc.id
-              };
+        const chefRef = doc(db, `restaurants/${userData.restaurantId}/chefs`, userData.chefId);
+        const chefDoc = await getDoc(chefRef);
 
-              updateChefInfo();
-              if (loginForm) loginForm.style.display = 'none';
-              if (chefPanel) chefPanel.style.display = 'block';
-              loadOrders();
-            } else {
-              alert('Ваш аккаунт деактивирован');
-              await signOut(auth);
-            }
+        if (chefDoc.exists()) {
+          const chefData = chefDoc.data();
+          if (chefData.active) {
+            currentChef = {
+              ...chefData,
+              id: chefDoc.id
+            };
+
+            updateChefInfo();
+            if (loginForm) loginForm.style.display = 'none';
+            if (chefPanel) chefPanel.style.display = 'block';
+            loadOrders();
           } else {
-            alert('Информация о поваре не найдена');
+            alert('Ваш аккаунт деактивирован');
             await signOut(auth);
           }
         } else {
-          alert('Ошибка: отсутствует restaurantId или chefId в данных пользователя');
-          console.error("userData", userData);
+          alert('Информация о поваре не найдена');
           await signOut(auth);
         }
       } else {
