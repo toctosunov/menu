@@ -20,6 +20,7 @@ import {
 
 import { firebaseConfig } from "./firebaseConfig.js";
 
+// инициализация
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -28,63 +29,60 @@ let currentRestaurant = null;
 let currentChef = null;
 let acceptedOrderId = null;
 
-// Проверка авторизации
 onAuthStateChanged(auth, async (user) => {
   const loginForm = document.getElementById('loginForm');
   const chefPanel = document.getElementById('chefPanel');
-  
+
   if (user) {
-    // Получаем информацию о пользователе из коллекции users
     const usersRef = collection(db, 'users');
     const userQuery = query(usersRef, where('uid', '==', user.uid));
     const userSnapshot = await getDocs(userQuery);
-    
+
     if (!userSnapshot.empty) {
       const userData = userSnapshot.docs[0].data();
-      
-      // Проверяем роль пользователя
+
       if (userData.role !== 'chef') {
         alert('У вас нет доступа к панели повара');
         await signOut(auth);
         return;
       }
 
-      // Получаем информацию о ресторане
       const restaurantRef = doc(db, 'restaurants', userData.restaurantId);
-
       const restaurantDoc = await getDoc(restaurantRef);
-      
+
       if (restaurantDoc.exists()) {
         currentRestaurant = {
           ...restaurantDoc.data(),
           id: restaurantDoc.id
         };
 
-        // Получаем информацию о поваре
-        const chefRef = doc(db, `restaurants/${userData.restaurantId}/chefs`, userData.chefId);
-        const chefDoc = await getDoc(chefRef);
-        
-        if (chefDoc.exists()) {
-          const chefData = chefDoc.data();
-          if (chefData.active) {
-            currentChef = {
-              ...chefData,
-              id: chefDoc.id
-            };
-            
-            // Обновляем интерфейс
-            updateChefInfo();
-            if (loginForm) loginForm.style.display = 'none';
-            if (chefPanel) chefPanel.style.display = 'block';
-            
-            // Загружаем заказы
-            loadOrders();
+        if (userData.restaurantId && userData.chefId) {
+          const chefRef = doc(db, `restaurants/${userData.restaurantId}/chefs`, userData.chefId);
+          const chefDoc = await getDoc(chefRef);
+
+          if (chefDoc.exists()) {
+            const chefData = chefDoc.data();
+            if (chefData.active) {
+              currentChef = {
+                ...chefData,
+                id: chefDoc.id
+              };
+
+              updateChefInfo();
+              if (loginForm) loginForm.style.display = 'none';
+              if (chefPanel) chefPanel.style.display = 'block';
+              loadOrders();
+            } else {
+              alert('Ваш аккаунт деактивирован');
+              await signOut(auth);
+            }
           } else {
-            alert('Ваш аккаунт деактивирован');
+            alert('Информация о поваре не найдена');
             await signOut(auth);
           }
         } else {
-          alert('Информация о поваре не найдена');
+          alert('Ошибка: отсутствует restaurantId или chefId в данных пользователя');
+          console.error("userData", userData);
           await signOut(auth);
         }
       } else {
