@@ -51,6 +51,7 @@ onAuthStateChanged(auth, async (user) => {
 
       // Получаем информацию о ресторане
       const restaurantRef = doc(db, 'restaurants', userData.restaurantId);
+
       const restaurantDoc = await getDoc(restaurantRef);
       
       if (restaurantDoc.exists()) {
