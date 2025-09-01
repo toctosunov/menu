@@ -53,8 +53,7 @@
 1. Клонировать репозиторий:
    ```bash
    git clone https://github.com/toctosunov/menu.git
-Перейти в папку и установить зависимости (если есть).
-
+   
 Подключить Firebase, добавив свои параметры в firebaseConfig.js.
 
 Запустить локальный сервер (Live Server или http-server).
